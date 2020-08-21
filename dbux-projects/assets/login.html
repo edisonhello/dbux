@@ -23,11 +23,11 @@
     const auth = firebase.auth();
 
     auth.onAuthStateChanged(user => {
-      if (user) {
-        console.log(user);
-        loginSuccess(user);
-      }
-      else {
+      // if (user) {
+      //   console.log(user);
+      //   loginSuccess(user);
+      // }
+      // else {
         firebase.auth().getRedirectResult().then((result) => {
           if (result && result.user) {
             loginSuccess(result);
@@ -36,7 +36,7 @@
             doLogin();
           }
         });
-      }
+      // }
     });
 
     function doLogin() {
@@ -48,6 +48,7 @@
       document.querySelector('#message').textContent = `Success! Logged in as ${result.user.displayName}.`;
       const accessToken = result.credential.accessToken;
       console.log(accessToken);
+      // result.user.getIdToken().then(console.log);
       sendData(accessToken);
     }
 
@@ -57,13 +58,20 @@
       const socket = io.connect(Remote, {
         port, 
         transports: ['websocket'],
-      })
+      });
       
-      socket.on('connect', () => socket.emit('accessToken', accessToken));
+      socket.on('connect', () => {
+        console.log('connected');
+        socket.emit('accessToken', accessToken)
+      });
       socket.on('connect_error', () => console.log('connection failed'));
       socket.on('disconnect', () => console.log('Server disconnected'));
       socket.on('error', (err) => console.log('Error:', err));
       socket.on('reconnect_attempt', () => console.log('reconnecting...'));
+      socket.on('ack', () => {
+        socket.emit('acked');
+        document.getElementById('message').innerHTML += `<br>You may close this tab.`
+      });
     }
   </script>
 

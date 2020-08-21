@@ -54,7 +54,7 @@ export default class BackendAuth {
   // }
 
   async loginWithGoogleAccessToken(googleAccessToken) {
-    const cred = this.backendController.firebase.auth.GoogleAuthProvider.credential(googleAccessToken);
+    const cred = this.backendController.firebase.auth.GoogleAuthProvider.credential(null, googleAccessToken);
     return await this.backendController.firebase.auth().signInWithCredential(cred);
   }
 
@@ -62,6 +62,7 @@ export default class BackendAuth {
     const keyName = 'dbux.projects.backend.googleAccessToken';
     const { get, set } = this.backendController.practiceManager.externals.storage;
     let googleAccessToken = get(keyName);
+    // let googleAccessToken;
 
     if (!googleAccessToken) {
       googleAccessToken = await this.loginWithLocalServer();
@@ -72,7 +73,7 @@ export default class BackendAuth {
   }
 
   async testFirebase() {
-    await this.backendController.fs.set('test', { x: 1 });
+    await this.backendController.fs.collection("testCollection").add({ x: 1 });
   }
 
   async login() {
@@ -91,6 +92,8 @@ export default class BackendAuth {
     } catch (err) {
       throw new Error(`Test firebase failed: ${err.message}`);
     }
+
+    debug("Login finished");
     // const { WebviewWrapper } = this.backendController.practiceManager.externals;
     // this.loginController = makeLoginController(WebviewWrapper);
     // return this.loginController.show();
@@ -114,22 +117,28 @@ export default class BackendAuth {
 
     const resultPort = 9891;
     const server = await manager.externals.makeListenSocket(resultPort);
-    let accessToken = await new Promise((resolve, reject) => {
-      server.on('connection', (socket) => {
-        socket.on('accessToken', (_accessToken) => {
-          resolve(_accessToken);
-        });
+    try {
+      let accessToken = await new Promise((resolve, reject) => {
+        server.on('connection', (socket) => {
+          debug('Get connection');
+          socket.on('accessToken', (_accessToken) => {
+            debug(`Receive accessToken: ${_accessToken}`);
+            resolve(_accessToken);
+            socket.emit('ack');
+          });
 
-        socket.on('disconnect', () => {
-          reject(new Error('User disconnect before sending accessToken.'));
+          socket.on('disconnect', () => {
+            reject(new Error('User disconnect before sending accessToken.'));
+          });
         });
       });
-    });
 
-    terminal.dispose();
-    server.close();
-
-    return accessToken;
+      return accessToken;
+    } 
+    finally {
+      terminal.dispose();
+      server.close();
+    }
   }
 
   logout() {
