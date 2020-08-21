@@ -24,13 +24,13 @@
 
     auth.onAuthStateChanged(user => {
       // if (user) {
-      //   console.log(user);
       //   loginSuccess(user);
       // }
       // else {
         firebase.auth().getRedirectResult().then((result) => {
           if (result && result.user) {
             loginSuccess(result);
+            // loginSuccess(result.user);
           }
           else {
             doLogin();
@@ -44,15 +44,20 @@
       firebase.auth().signInWithRedirect(provider);
     }
 
+    // function loginSuccess(user) {
     function loginSuccess(result) {
       document.querySelector('#message').textContent = `Success! Logged in as ${result.user.displayName}.`;
       const accessToken = result.credential.accessToken;
       console.log(accessToken);
-      // result.user.getIdToken().then(console.log);
       sendData(accessToken);
+      // document.querySelector('#message').textContent = `Success! Logged in as ${user.displayName}.`;
+      // const idToken = user.getAuthResponse().id_token;
+      // console.log(idToken);
+      // sendData(idToken);
     }
 
     function sendData(accessToken) {
+    // function sendData(idToken) {
       const port = 9891;
       const Remote = `ws://localhost:${port}`;
       const socket = io.connect(Remote, {
@@ -62,7 +67,8 @@
       
       socket.on('connect', () => {
         console.log('connected');
-        socket.emit('accessToken', accessToken)
+        // socket.emit('googleIdToken', idToken);
+        socket.emit('googleAccessToken', accessToken);
       });
       socket.on('connect_error', () => console.log('connection failed'));
       socket.on('disconnect', () => console.log('Server disconnected'));

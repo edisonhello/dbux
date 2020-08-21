@@ -53,11 +53,29 @@ export default class BackendAuth {
   //   // return await firebase.auth().signInWithCredential(cred);
   // }
 
+  // async loginWithGoogleIdToken(googleIdToken) {
+  //   const cred = this.backendController.firebase.auth.GoogleAuthProvider.credential(googleIdToken);
+  //   return await this.backendController.firebase.auth().signInWithCredential(cred);
+  // }
+
   async loginWithGoogleAccessToken(googleAccessToken) {
     const cred = this.backendController.firebase.auth.GoogleAuthProvider.credential(null, googleAccessToken);
     return await this.backendController.firebase.auth().signInWithCredential(cred);
   }
 
+  // async getGoogleIdToken() {
+  //   const keyName = 'dbux.projects.backend.googleIdToken';
+  //   const { get, set } = this.backendController.practiceManager.externals.storage;
+  //   // let googleIdToken = get(keyName);
+  //   let googleIdToken;
+
+  //   if (!googleIdToken) {
+  //     googleIdToken = await this.loginWithLocalServer();
+  //     await set(keyName, googleIdToken);
+  //   }
+
+  //   return googleIdToken;
+  // }
   async getGoogleAccessToken() {
     const keyName = 'dbux.projects.backend.googleAccessToken';
     const { get, set } = this.backendController.practiceManager.externals.storage;
@@ -77,6 +95,15 @@ export default class BackendAuth {
   }
 
   async login() {
+    // let googleIdToken = await this.getGoogleIdToken();
+
+    // debug(`googleIdToken = ${googleIdToken}`);
+
+    // try {
+    //   await this.loginWithGoogleIdToken(googleIdToken);
+    // } catch (err) {
+    //   throw new Error(`Login with googleIdToken failed: ${err.message}`);
+    // }
     let googleAccessToken = await this.getGoogleAccessToken();
 
     debug(`googleAccessToken = ${googleAccessToken}`);
@@ -121,7 +148,7 @@ export default class BackendAuth {
       let accessToken = await new Promise((resolve, reject) => {
         server.on('connection', (socket) => {
           debug('Get connection');
-          socket.on('accessToken', (_accessToken) => {
+          socket.on('googleAccessToken', (_accessToken) => {
             debug(`Receive accessToken: ${_accessToken}`);
             resolve(_accessToken);
             socket.emit('ack');
@@ -134,6 +161,22 @@ export default class BackendAuth {
       });
 
       return accessToken;
+      // let googleIdToken = await new Promise((resolve, reject) => {
+      //   server.on('connection', (socket) => {
+      //     debug('Get connection');
+      //     socket.on('googleIdToken', (_googleIdToken) => {
+      //       debug(`Receive googleIdToken: ${_googleIdToken}`);
+      //       resolve(_googleIdToken);
+      //       socket.emit('ack');
+      //     });
+
+      //     socket.on('disconnect', () => {
+      //       reject(new Error('User disconnect before sending accessToken.'));
+      //     });
+      //   });
+      // });
+
+      // return googleIdToken;
     } 
     finally {
       terminal.dispose();
