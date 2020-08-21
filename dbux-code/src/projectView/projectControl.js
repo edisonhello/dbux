@@ -1,4 +1,4 @@
-import { window } from 'vscode';
+import { window, env, Uri } from 'vscode';
 import path from 'path';
 import { newLogger } from '@dbux/common/src/log/logger';
 import { initDbuxProjects, ProjectsManager } from '@dbux/projects/src';
@@ -8,8 +8,10 @@ import { showTextDocument, showTextInNewFile } from '../codeUtil/codeNav';
 import TerminalWrapper from '../terminal/TerminalWrapper';
 import { set as storageSet, get as storageGet } from '../memento';
 import { getResourcePath } from '../resources';
+import { makeListenSocket } from '../net/serverUtil';
 import { interactiveGithubLogin } from '../net/GithubAuth';
 import WebviewWrapper from '../codeUtil/WebviewWrapper';
+import { runTaskWithProgressBar } from '../codeUtil/runTaskWithProgressBar';
 
 const logger = newLogger('projectControl');
 
@@ -77,6 +79,11 @@ function createProjectManager(extensionContext) {
       warning: showWarningMessage,
     },
     WebviewWrapper,
+    runTaskWithProgressBar,
+    makeListenSocket,
+    async openWebsite(website) {
+      await env.openExternal(Uri.parse(website));
+    },
     interactiveGithubLogin
   };
 

@@ -2,6 +2,8 @@ import { newLogger } from '@dbux/common/src/log/logger';
 import getDb, { getFirebase } from './db';
 import { makeLoginController } from './LoginController';
 
+/** @typedef {import('./BackendController').default} BackendController */
+
 // eslint-disable-next-line no-unused-vars
 const { log, debug, warn, error: logError } = newLogger('Firebase Auth');
 
@@ -10,6 +12,9 @@ const { log, debug, warn, error: logError } = newLogger('Firebase Auth');
 
 
 export default class BackendAuth {
+  /**
+   * @param {BackendController} backendController 
+   */
   constructor(backendController) {
     this.backendController = backendController;
 
@@ -48,19 +53,83 @@ export default class BackendAuth {
   //   // return await firebase.auth().signInWithCredential(cred);
   // }
 
-  async login() {
-    const { WebviewWrapper } = this.backendController.practiceManager.externals;
-    this.loginController = makeLoginController(WebviewWrapper);
-    return this.loginController.show();
+  async loginWithGoogleAccessToken(googleAccessToken) {
+    const cred = this.backendController.firebase.auth.GoogleAuthProvider.credential(googleAccessToken);
+    return await this.backendController.firebase.auth().signInWithCredential(cred);
   }
 
+  async getGoogleAccessToken() {
+    const keyName = 'dbux.projects.backend.googleAccessToken';
+    const { get, set } = this.backendController.practiceManager.externals.storage;
+    let googleAccessToken = get(keyName);
+
+    if (!googleAccessToken) {
+      googleAccessToken = await this.loginWithLocalServer();
+      await set(keyName, googleAccessToken);
+    }
+
+    return googleAccessToken;
+  }
+
+  async testFirebase() {
+    await this.backendController.fs.set('test', { x: 1 });
+  }
+
+  async login() {
+    let googleAccessToken = await this.getGoogleAccessToken();
+
+    debug(`googleAccessToken = ${googleAccessToken}`);
+
+    try {
+      await this.loginWithGoogleAccessToken(googleAccessToken);
+    } catch (err) {
+      throw new Error(`Login with googleAccessToken failed: ${err.message}`);
+    }
+
+    try {
+      await this.testFirebase();
+    } catch (err) {
+      throw new Error(`Test firebase failed: ${err.message}`);
+    }
+    // const { WebviewWrapper } = this.backendController.practiceManager.externals;
+    // this.loginController = makeLoginController(WebviewWrapper);
+    // return this.loginController.show();
+  }
+
+  /**
+   * @return {*} googleAccessToken
+   */
   async loginWithLocalServer() {
-    // 1. start local server
-    // 2. navigate user to website and let user follow login flow
-    // 3. get + store result accessToken
-    
-    // const cred = firebase.auth.GoogleAuthProvider.credential(googleAccessToken);
-    // return await firebase.auth().signInWithCredential(cred);
+    const { practiceManager: manager } = this.backendController;
+
+    const cwd = manager.externals.resources.getResourcePath('dist', 'projects');
+    const port = 9890;
+    const command = `npx serve . -l ${port}`;
+    const terminal = manager.externals.TerminalWrapper.execInTerminal(cwd, command);
+
+    // needs extra wait
+    if (await manager.externals.openWebsite(`http://localhost:${port}/login`)) {
+      throw new Error(`Error when opening website`);
+    }
+
+    const resultPort = 9891;
+    const server = await manager.externals.makeListenSocket(resultPort);
+    let accessToken = await new Promise((resolve, reject) => {
+      server.on('connection', (socket) => {
+        socket.on('accessToken', (_accessToken) => {
+          resolve(_accessToken);
+        });
+
+        socket.on('disconnect', () => {
+          reject(new Error('User disconnect before sending accessToken.'));
+        });
+      });
+    });
+
+    terminal.dispose();
+    server.close();
+
+    return accessToken;
   }
 
   logout() {

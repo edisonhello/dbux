@@ -1,5 +1,6 @@
 <head>
   <title>Dbux Login</title>
+  <script src="https://cdn.jsdelivr.net/npm/socket.io-client@2.3.0/dist/socket.io.js"></script>
 </head>
 
 <body>
@@ -23,12 +24,13 @@
 
     auth.onAuthStateChanged(user => {
       if (user) {
-        loginSuccess();
+        console.log(user);
+        loginSuccess(user);
       }
       else {
         firebase.auth().getRedirectResult().then((result) => {
           if (result && result.user) {
-            loginSuccess();
+            loginSuccess(result);
           }
           else {
             doLogin();
@@ -42,9 +44,26 @@
       firebase.auth().signInWithRedirect(provider);
     }
 
-    function loginSuccess() {
-      console.log(result.credential.accessToken);
+    function loginSuccess(result) {
       document.querySelector('#message').textContent = `Success! Logged in as ${result.user.displayName}.`;
+      const accessToken = result.credential.accessToken;
+      console.log(accessToken);
+      sendData(accessToken);
+    }
+
+    function sendData(accessToken) {
+      const port = 9891;
+      const Remote = `ws://localhost:${port}`;
+      const socket = io.connect(Remote, {
+        port, 
+        transports: ['websocket'],
+      })
+      
+      socket.on('connect', () => socket.emit('accessToken', accessToken));
+      socket.on('connect_error', () => console.log('connection failed'));
+      socket.on('disconnect', () => console.log('Server disconnected'));
+      socket.on('error', (err) => console.log('Error:', err));
+      socket.on('reconnect_attempt', () => console.log('reconnecting...'));
     }
   </script>
 

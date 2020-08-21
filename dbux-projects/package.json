@@ -12,11 +12,15 @@
     "lodash": "^4.17.19",
     "nanoevents": "^2.0.0",
     "node-fetch": "^2.6.0",
+    "serve": "^11.3.2",
     "shelljs": "0.8.4",
     "string-argv": "^0.3.1",
     "tree-kill": "^1.2.2"
   },
   "keywords": [],
   "author": "Domi",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "serve": "^11.3.2"
+  }
 }
