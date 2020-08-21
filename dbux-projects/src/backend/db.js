@@ -51,9 +51,9 @@ export function initDB(manager) {
     let { dependencyRoot } = manager.config;
     let nodeModules = path.join(dependencyRoot, 'node_modules');
     try {
-      firebase = require(path.join(nodeModules, 'firebase'));
-      require(path.join(nodeModules, 'firebase/auth'));
-      require(path.join(nodeModules, 'firebase/firestore'));
+      firebase = __non_webpack_require__(path.join(nodeModules, 'firebase'));
+      __non_webpack_require__(path.join(nodeModules, 'firebase/auth'));
+      __non_webpack_require__(path.join(nodeModules, 'firebase/firestore'));
     } catch (err) {
       throw new Error(`Unable to load firebase. Make sure to call installBackendDependencies before trying to access DB capabilities: ${err.message}`);
     }
