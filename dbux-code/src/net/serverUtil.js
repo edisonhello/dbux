@@ -9,10 +9,11 @@ let _makeHttpServerPromise;
 
 /**
  * @param {number} port 
+ * @param {function} serverCallback
  * @return {Promise<httpServer>}
  */
-export function makeHttpServer(port) {
-  const httpServer = http.createServer();
+export function makeHttpServer(port, serverCallback) {
+  const httpServer = http.createServer(serverCallback);
   // const address = '0.0.0.0';
   const address = '';
 

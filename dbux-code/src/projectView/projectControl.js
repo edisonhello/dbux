@@ -8,7 +8,7 @@ import { showTextDocument, showTextInNewFile } from '../codeUtil/codeNav';
 import TerminalWrapper from '../terminal/TerminalWrapper';
 import { set as storageSet, get as storageGet } from '../memento';
 import { getResourcePath } from '../resources';
-import { makeListenSocket } from '../net/serverUtil';
+import { makeHttpServer, makeListenSocket } from '../net/serverUtil';
 import { interactiveGithubLogin } from '../net/GithubAuth';
 import WebviewWrapper from '../codeUtil/WebviewWrapper';
 import { runTaskWithProgressBar } from '../codeUtil/runTaskWithProgressBar';
@@ -80,6 +80,7 @@ function createProjectManager(extensionContext) {
     },
     WebviewWrapper,
     runTaskWithProgressBar,
+    makeHttpServer,
     makeListenSocket,
     async openWebsite(website) {
       await env.openExternal(Uri.parse(website));

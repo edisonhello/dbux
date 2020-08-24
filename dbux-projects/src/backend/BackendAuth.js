@@ -1,3 +1,5 @@
+import serveHandler from 'serve-handler';
+
 import { newLogger } from '@dbux/common/src/log/logger';
 import getDb, { getFirebase } from './db';
 import { makeLoginController } from './LoginController';
@@ -132,12 +134,14 @@ export default class BackendAuth {
   async loginWithLocalServer() {
     const { practiceManager: manager } = this.backendController;
 
-    const cwd = manager.externals.resources.getResourcePath('dist', 'projects');
     const port = 9890;
-    const command = `npx serve . -l ${port}`;
-    const terminal = manager.externals.TerminalWrapper.execInTerminal(cwd, command);
+    const cwd = manager.externals.resources.getResourcePath('dist', 'projects');
+    const httpServer = await manager.externals.makeHttpServer(port, (request, response) => {
+      return serveHandler(request, response, {
+        public: cwd,
+      });
+    });
 
-    // needs extra wait
     if (await manager.externals.openWebsite(`http://localhost:${port}/login`)) {
       throw new Error(`Error when opening website`);
     }
